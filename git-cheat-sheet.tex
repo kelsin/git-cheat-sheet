@@ -1,0 +1,297 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage[cm]{fullpage}
+
+\input xy
+\xyoption{all}
+
+\title{Git Cheat Sheet}
+\author{Christopher Giroir}
+
+\begin{document}
+
+\maketitle
+
+\section{Basics}
+
+All commands in git can be called with \texttt{git command} or
+\texttt{git-command}. If you want man page information, you need to use
+\texttt{git-command} form.
+
+\begin{verbatim}
+# Both of the commands below work
+git-diff
+git diff
+
+# Man pages are only in hyphen format
+man git-diff
+\end{verbatim}
+
+\subsection{Creation}
+
+\begin{description}
+\item [git init] Making a brand new repo
+
+\begin{verbatim}
+# cd to the root directory of what you want to store
+cd savingstar-awesome
+git init
+\end{verbatim}
+
+\item [git clone] Making from another repo (for example, git hub)
+
+\begin{verbatim}
+git clone git@github.com:Kelsin/configs.git
+# The "configs" folder is created by default
+\end{verbatim}
+
+\end{description}
+
+\subsection{Commands simular to CVS/SVN}
+
+The following commands behave very simular to cvs. Most of them support the
+\texttt{--color} flag to make the output appear nice on an ansi-terminal and
+also automatically page (so you don't need a \texttt{| less} when using them).
+
+\begin{description}
+\item [git status] Show what branch you're on and current changes (in index and out)
+\item [git diff] Show working changes, changes between commits, etc.
+\item [git blame] A better named cvs annotate
+\item [git log] History of commits of a file, or repo.
+\end{description}
+
+\subsection{Commands that differ from CVS/SVN}
+These commands either are not available in other version control system or
+behave differently.
+
+\begin{description}
+\item [git commit] Commits to the current branch. Supply -v to get a full diff
+  in the comments of your editor so you can see exactly what is being
+  committed. This command only commits items from the index to the local repo
+  (see the next section for more information).
+\item [git branch] Deal with branches (more about this below)
+\item [git stash] Saves your working directory away, can be recalled
+  anytime. Handy when you aren't ready to even do a small branch commit and have
+  to switch branches to fix a bug.
+\item [gitk] Depending on how you installed git this program may be
+  available. Shows you graphically what your commit tree/current branch looks
+  like. On the mac we prefer GitX: http://gitx.laullon.com/
+\end{description}
+
+\subsection{Commits}
+Each commit in Git stores who made the commit, a message, the date of the
+commit, what commit is the parent of this commit (in a merge situation you can
+have multiple parents) and a link to a whole file tree. Commits are not storing
+diffs like in some other VCS's. In git each commit respresent the entire file
+tree at that point in time. Behind the scenes git is clearly doing a lot of
+clever stuff in order for this to be possible.
+
+Each commit is labeled with a SHA-1 hash that takes all of this information into
+account. If you need to change anything about a commit (the message, the author,
+etc) it will change the SHA-1. It's cool to note that git DOES allow you to
+write history in many ways. We'll look at a couple later in this document.
+
+\subsection{Setting up your name and email}
+
+To make sure your name appears correctly in github run these commands on acs-dev
+(saves it in your home directory so this will now work on all vm's).
+
+\begin{verbatim}
+git config --global user.name "Christopher Giroir"
+git config --global user.email "cgiroir@savingstar.com"
+\end{verbatim}
+
+\section{Repos}
+
+There are four places that git stores data in a normal checkout.
+
+\begin{description}
+\item [Working Directory] These are the actual files you are editing in your
+  project. It is possible to make a git repo without a working directory (for
+  example to use as a shared server).
+\item [Index] This is a local cache of files that are ready to be commited. You
+  need to \texttt{add} files to this index in order to commit them. If you modify
+  files after you add them, only the added version gets commited, not the new
+  changes.
+\item [Local Repository] This is the data inside the \texttt{.git} folder where
+  git stores it's information. This will contain the entire history of the
+  repository that you cloned from.
+\item [Remote Repository] You can add remote repositories to your git
+  repo. Unlike CVS and SVN you don't need to have a remote repository. In our
+  use case these are most likely going to be repositories that live in
+  gitorious.
+\end{description}
+
+\subsection{Simple Diagram of Git Commands}
+
+This is very simplified but it shows the basic track of data during a normal
+workflow.
+
+\xymatrix{
+  *++[F-,]{\txt{Working}} \ar@/^2pc/[r]^{\txt{git add}}&
+  *++[F-,]{\txt{Index}} \ar@/^2pc/[r]^{\txt{git commit}}&
+  *++[F-,]{\txt{Local Repo}} \ar@/^2pc/[r]^{\txt{git push}} \ar@/^2pc/[ll]^{\txt{git checkout}}&
+  *++[F-,]{\txt{Remote Repo}} \ar@/^2pc/[l]^{\txt{git fetch}} \ar `d[dd] `[ddlll]^{\txt{git pull}} [lll] \\
+  & & & \\
+  & & &
+}
+
+\section{Branches}
+
+Branches are extremely light weight in git. Git stores everything as a big tree
+of commits and branches are just pointers to certain commits. In the following
+diagram the top branch probably has a label (maybe \texttt{master}) on commit
+\texttt{d} while the lower branch has a label (maybe \texttt{cs\_panel\_2009}) on
+commit \texttt{f}.
+
+\xymatrix{
+  *++[o][F-]{a} \ar[r] &
+  *++[o][F-]{b} \ar[r] \ar[rd] &
+  *++[o][F-]{c} \ar[r] &
+  *++[o][F-]{d} \\
+  & & *++[o][F-]{e} \ar[r] &
+  *++[o][F-]{f} \\
+}
+
+\subsection{Creation of a new branch}
+
+\begin{verbatim}
+# To create a brand new branch you can use
+git branch <name>
+
+# and then switch to it using
+git checkout <name>
+
+# You can also both of the above commands with
+git checkout -b <name>
+
+# To view branches
+git branch
+
+# To view all branches (including remote links)
+git branch -a
+
+# To delete a branch
+git branch -d <name>
+
+# If deleting this branch means that some commits will be unreachable
+# (by branch labels) you might need to force it:
+git branch -D <name>
+\end{verbatim}
+
+\subsection{Merging}
+
+There are two types of merges that git can handle. The first is simular to
+merges in CVS and Subversion and is called ``merge''. The other is called
+``rebase'' and actually changes the SHA-1 hashes of the branch commits.
+
+\subsubsection{Merges}
+Using the diagram above a merge of the bottom branch to the top would yield this
+result:
+
+\xymatrix{
+  *++[o][F-]{a} \ar[r] &
+  *++[o][F-]{b} \ar[r] \ar[rd] &
+  *++[o][F-]{c} \ar[r] &
+  *++[o][F-]{d} \ar[r] &
+  *++[o][F-]{g} \\
+  & & *++[o][F-]{e} \ar[r] &
+  *++[o][F-]{f} \ar[ur] \\
+}
+
+We now have a new commit (\texttt{g}) that contains the merge of the two
+branches. When merging in this way you should make sure that your index is clean
+(\texttt{git diff --cached HEAD} returns nothing).
+
+When a clean merge is able to happen (no conflicts) you end up with both branch
+pointers pointing to the new commit (\texttt{g}). At this point one of the two
+branches can be deleted with \texttt{git branch -d} since all of the commits are
+reachable from the other branch label.
+
+\subsubsection{Merge Example}
+
+\begin{verbatim}
+# We want to merge coupon_fix into master
+# First checkout master
+git checkout master
+
+# Now do the merge
+git merge coupon_fix
+\end{verbatim}
+
+\subsubsection{Rebase}
+
+A rebase will actually change the commits of the branch it's run on. This means
+that this isn't a safe operation to run if the branch you are rebasing is being
+shared and pushed around. This is a great thing to do when you are working on a
+small branch (alone) and you want to commit it to a shared development
+branch. It helps you keep the commit history very clean.
+
+A rebase results in your changes being ``played back'' over the other
+branch. This would result in the following graph:
+
+\xymatrix{
+  *++[o][F-]{a} \ar[r] &
+  *++[o][F-]{b} \ar[r] &
+  *++[o][F-]{c} \ar[r] &
+  *++[o][F-]{d} \ar[dl] \\
+  & & *++[o][F-]{e'} \ar[r] &
+  *++[o][F-]{f'} \\
+}
+
+Right after the rebase command the upper branch label is still on commit
+\texttt{d} while the lower branch label is on \texttt{f'}. At this point if you
+run a merge on the master branch (as we did above in the example) you would get
+a ``fast-forward'' merge since there is no computation that needs to be
+done. The label for master would be moved from \texttt{d} to \texttt{f'}.
+
+The end result is a cleaner history for the master branch. For complicated
+branches this can't be done, but it can help prevent lots of tiny branches in
+our commit history which can be hard to follow.
+
+\subsubsection{Rebase Example}
+
+\begin{verbatim}
+# We want to merge coupon_fix into master using a rebase
+# First checkout coupon_fix
+git checkout coupon_fix
+
+# Do the rebase
+git rebase master
+
+# Now checkout master and merge to fast-forward our branch label
+git checkout master
+git merge coupon_fix
+
+# The checkout and rebase can be done as one command as well
+# resulting in the following:
+git rebase master coupon_fix
+git checkout master
+git merge coupon_fix
+\end{verbatim}
+
+\subsection{Sample Work Flow}
+Here is a simple example of fixing a bug while working on another branch.
+
+\begin{verbatim}
+# New Project Time! Let's create a branch
+> git checkout -b coupon_fix
+
+# Do work
+> git status
+> git add <file> <file>
+> git commit
+# Repeat this a bunch
+
+# Bug comes in! Make sure everything is commited on the coupon_fix branch
+> git checkout master
+# Edit files
+> git commit -a
+# Update live servers
+local> git push
+servers> git pull
+
+# Back to new stuff!
+> git checkout coupon_fix
+\end{verbatim}
+
+\end{document}
